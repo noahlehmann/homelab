@@ -1,0 +1,47 @@
+---
+- name: Setup all runner VMs
+  hosts: runner_1
+  vars_prompt:
+    - name: github_token
+      prompt: "What is your GitHub Token?"
+      default: "{{ lookup('env','GITHUB_TOKEN') }}"
+      private: yes
+
+  tasks:
+    - name: Install Github CLI
+      block:
+        - name: "Get Latest Release from Github"
+          community.general.github_release:
+            user: cli
+            repo: cli
+            action: latest_release
+            token: "{{ github_token }}"
+          register: release
+        - name: Print Latest release
+          ansible.builtin.debug:
+            var: release
+        - name: Download Binary
+          ansible.builtin.unarchive:
+            src: https://github.com/cli/cli/releases/download/{{release.tag}}/gh_{{release.tag[1:]}}_linux_amd64.tar.gz
+            dest: /tmp
+            remote_src: true
+        - name: Install Binary
+          ansible.builtin.copy:
+            src: /tmp/gh_{{release.tag[1:]}}_linux_amd64/bin/gh
+            dest: "/usr/local/bin"
+            mode: a+x
+          become: true
+
+    - name: Install Docker
+      block:
+        - name: Install dependencies
+          become: true
+          ansible.builtin.apt:
+            update_cache: true
+            state: present
+            name:
+              - apt-transport-https
+              - ca-certificates
+              - curl
+              - gnupg
+              - lsb-release
