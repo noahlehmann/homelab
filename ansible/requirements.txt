@@ -1,0 +1,5 @@
+ansible
+ansible-vault
+ansible-lint
+proxmoxer
+requests

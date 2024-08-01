@@ -1,7 +1,7 @@
 FROM alpine:3.19.1 as base
 
 WORKDIR /ansible
-COPY ./requirements_ansible.yaml /ansible/requirements_ansible.yaml
+COPY requirements_ansible.yaml /ansible/requirements_ansible.yaml
 COPY requirements_python.txt /ansible/requirements_python.txt
 
 RUN apk update && apk add --no-cache \

@@ -1,0 +1,91 @@
+---
+- name: Deploy Pi-hole on PVE as LXC
+  hosts: pve_1
+  tasks:
+    - name: Download debian template
+      #delegate_to: pve_1
+      ansible.builtin.get_url:
+        url: "http://download.proxmox.com/images/system/debian-12-standard_12.2-1_amd64.tar.zst"
+        dest: "/var/lib/vz/template/cache/debian-12-standard_12.2-1_amd64.tar.zst"
+        mode: "0644"
+
+    - name: Create LXC container
+      delegate_to: localhost
+      community.general.proxmox:
+        api_host: "{{ ips.pve }}"
+        api_user: "{{ login.pve.token_user }}"
+        api_token_id: "{{ login.pve.token_id }}"
+        api_token_secret: "{{ login.pve.token_secret }}"
+        node: pve
+        vmid: 200
+        state: present
+        ostemplate: "local:vztmpl/debian-12-standard_12.2-1_amd64.tar.zst"
+        ostype: debian
+        hostname: pi-hole-1
+        password: "{{ login.pihole.ssh_password }}"
+        pubkey: "{{ ssh_pub }}"
+        disk: "local-lvm:4"
+
+    - name: Configure LXC container
+      delegate_to: localhost
+      community.general.proxmox:
+        api_host: "{{ ips.pve }}"
+        api_user: "{{ login.pve.token_user }}"
+        api_token_id: "{{ login.pve.token_id }}"
+        api_token_secret: "{{ login.pve.token_secret }}"
+        node: pve
+        vmid: 200
+        update: true
+        ostype: debian
+        hostname: pi-hole-1
+        onboot: true
+        cores: 2
+        memory: 512
+        swap: 0
+        tags: dns
+        unprivileged: true
+        timezone: "Europe/Berlin"
+        netif: '{"net0": "name=eth0,bridge=vmbr0,firewall=1,gw=10.0.0.1,hwaddr=BC:24:11:00:00:32,ip=10.0.0.31/24,type=veth"}'
+        nameserver: 208.67.222.222
+
+    - name: Start LXC container
+      delegate_to: localhost
+      community.general.proxmox:
+        api_host: "{{ ips.pve }}"
+        api_user: "{{ login.pve.token_user }}"
+        api_token_id: "{{ login.pve.token_id }}"
+        api_token_secret: "{{ login.pve.token_secret }}"
+        node: pve
+        vmid: 200
+        state: started
+
+    - name: Create pi-hole etc folder
+      delegate_to: pi_hole_1
+      ansible.builtin.file:
+        path: "/etc/pihole"
+        state: directory
+
+    - name: Prepopulate pi-hole configuration
+      delegate_to: pi_hole_1
+      ansible.builtin.copy:
+        content: |
+          WEBPASSWORD={{ login.pihole.web_password }}
+          PIHOLE_INTERFACE=eth0
+          PIHOLE_DNS_1=208.67.222.222
+          PIHOLE_DNS_2=208.67.220.220
+          QUERY_LOGGING=true
+          INSTALL_WEB_SERVER=true
+          INSTALL_WEB_INTERFACE=true
+          LIGHTTPD_ENABLED=true
+          CACHE_SIZE=10000
+          DNS_FQDN_REQUIRED=true
+          DNS_BOGUS_PRIV=true
+          DNSMASQ_LISTENING=local
+          BLOCKING_ENABLED=true
+        dest: /etc/pihole/setupVars.conf
+
+    - name: Install Pi-hole
+      delegate_to: pi_hole_1
+      ansible.builtin.shell:
+        cmd: wget -qO- https://install.pi-hole.net | bash /dev/stdin --unattended
+        creates: /usr/local/bin/pihole

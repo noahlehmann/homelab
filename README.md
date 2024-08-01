@@ -35,3 +35,11 @@ Test the ansible connection to the hosts.
 ```bash
 ANSIBLE_CONFIG=./ansible/ansible.cfg ansible -m ping all --vault-password-file .env/vault_pass
 ```
+
+# Pi-hole
+
+webpass:
+
+```bash
+echo -n "<password>" | shasum -a 256 | awk '{printf "%s",$1 }' | shasum -a 256 | sed 's/ .*//g'
+```

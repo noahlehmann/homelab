@@ -1,0 +1,6 @@
+---
+dns-servers:
+  hosts:
+    pi_hole_1:
+      ansible_host: 10.0.0.31
+      ansible_user: root
