@@ -1,0 +1,44 @@
+---
+- name: Create VM template for TrueNAS
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - config/vm_vars.yaml
+    - ../ansible.global_vars.yaml
+  vars:
+    target_ansible_pve_host: "pve_nas"
+    image_url: "https://download.sys.truenas.net/TrueNAS-SCALE-ElectricEel/24.10.1/TrueNAS-SCALE-24.10.1.iso"
+    filename: "trueNAS-scale-24.10.1.iso"
+  tasks:
+    - name: Download the image
+      ansible.builtin.uri:
+        url: "{{ image_url }}"
+        dest: "/var/lib/vz/template/iso/{{ filename }}"
+        status_code: [200, 304]
+      delegate_to: "{{ target_ansible_pve_host }}"
+
+    - name: Create trueNas VM
+      community.general.proxmox_kvm:
+        api_host: "{{ pve_api.host }}"
+        api_user: "{{ pve_api.user }}@{{ pve_api.realm }}"
+        api_password: "{{ pve_api.password }}"
+        state: present
+        node: "{{ vm.node }}"
+        vmid: "{{ vm.vmid }}"
+        name: "{{ vm.name }}"
+        ostype: "{{ vm.ostype }}"
+        onboot: "{{ vm.onboot }}"
+        agent: "{{ vm.agent }}"
+        bios: "{{ vm.bios }}"
+        cpu: "{{ vm.cpu }}"
+        sockets: "{{ vm.sockets }}"
+        cores: "{{ vm.cores }}"
+        memory: "{{ vm.memory }}"
+        balloon: "{{ vm.balloon }}"
+        scsihw: "{{ vm.scsihw }}"
+        ide:
+          ide0: "{{ vm.storage }}:{{ vm.disk_size }}"
+          ide1: "{{ vm.iso_storage }}:iso/{{ filename }},media=cdrom"
+        net:
+          net0: "model=virtio,bridge={{ vm.host_bridge }},firewall=1"
+        tags: "{{ vm.tags }}"

@@ -33,7 +33,7 @@ echo "password" > .env/vault_pass
 Test the ansible connection to the hosts.
 
 ```bash
-ANSIBLE_CONFIG=./ansible/ansible.cfg ansible -m ping all --vault-password-file .env/vault_pass
+ANSIBLE_CONFIG=./ansible/ansible.cfg ansible -m ping all --vault-password-file ansible/.env/vault_pass
 ```
 
 # Pi-hole

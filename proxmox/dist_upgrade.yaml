@@ -1,0 +1,12 @@
+---
+- name: Apt update and upgrade
+  hosts: "proxmox"
+  tasks:
+    - name: Upgrade all packages
+      become: true
+      ansible.builtin.apt:
+        upgrade: dist
+        update_cache: true
+        autoclean: true
+        autoremove: true
+        install_recommends: false

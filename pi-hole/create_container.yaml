@@ -1,0 +1,73 @@
+---
+- name: Deploy Pi-hole on PVE as LXC
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - config/container.yaml
+    - ../ansible.global_vars.yaml
+  vars:
+    target_ansible_pve_host: "pve_nas"
+    rootfs_url: "http://download.proxmox.com/images/system/debian-12-standard_12.2-1_amd64.tar.zst"
+    filename: "debian-12-standard_12.2-1_amd64.tar.zst"
+  tasks:
+    - name: Download debian template
+      ansible.builtin.get_url:
+        url: "{{ rootfs_url }}"
+        dest: "/var/lib/vz/template/cache/{{ filename }}"
+        mode: "0644"
+      delegate_to: "{{ target_ansible_pve_host }}"
+
+    - name: Create LXC container
+      community.general.proxmox:
+        api_host: "{{ pve_api.host }}"
+        api_user: "{{ pve_api.user }}@{{ pve_api.realm }}"
+        api_password: "{{ pve_api.password }}"
+        state: present
+        node: "{{ lxc.node }}"
+        vmid: "{{ lxc.vmid }}"
+        ostemplate: "local:vztmpl/{{ lxc.template }}"
+        ostype: "{{ lxc.ostype }}"
+        hostname: "{{ lxc.hostname }}"
+        password: "{{ lxc.ssh_password }}"
+        pubkey: "{{ ssh_pub }}"
+        disk: "{{ lxc.storage }}:{{ lxc.disk_size }}"
+
+    - name: Configure LXC container
+      community.general.proxmox:
+        api_host: "{{ pve_api.host }}"
+        api_user: "{{ pve_api.user }}@{{ pve_api.realm }}"
+        api_password: "{{ pve_api.password }}"
+        update: true
+        node: "{{ lxc.node }}"
+        vmid: "{{ lxc.vmid }}"
+        ostype: "{{ lxc.ostype }}"
+        hostname: "{{ lxc.hostname }}"
+        onboot: "{{ lxc.onboot }}"
+        cores: "{{ lxc.cores }}"
+        memory: "{{ lxc.memory }}"
+        swap: "{{ lxc.swap }}"
+        tags: "{{ lxc.tags }}"
+        unprivileged: "{{ lxc.unprivileged }}"
+        timezone: "{{ lxc.timezone }}"
+        netif: '{"net0": "name=eth0,bridge=vmbr0,firewall=1,gw={{ lxc.gateway }},ip={{ lxc.ip }},type=veth"}'
+        nameserver: "{{ lxc.nameserver }}"
+
+    - name: Start LXC container
+      community.general.proxmox:
+        api_host: "{{ pve_api.host }}"
+        api_user: "{{ pve_api.user }}@{{ pve_api.realm }}"
+        api_password: "{{ pve_api.password }}"
+        node: "{{ lxc.node }}"
+        vmid: "{{ lxc.vmid }}"
+        state: started
+
+    - name: Create initial Snapshot with bare root-fs
+      community.general.proxmox_snap:
+        api_host: "{{ pve_api.host }}"
+        api_user: "{{ pve_api.user }}@{{ pve_api.realm }}"
+        api_password: "{{ pve_api.password }}"
+        vmid: "{{ lxc.vmid }}"
+        snapname: "{{ lxc.snapshot.name }}"
+        description: "{{ lxc.snapshot.description }}"
+        state: present
+        vmstate: false

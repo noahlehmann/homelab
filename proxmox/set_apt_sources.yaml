@@ -1,0 +1,46 @@
+---
+- name: Set apt sources for PVE no subscription
+  hosts: "proxmox"
+  vars:
+    sources:
+      enterprise: "/etc/apt/sources.list.d/pve-enterprise.list"
+      ceph: "/etc/apt/sources.list.d/ceph.list"
+      no_sub:
+        repo: "http://download.proxmox.com/debian/pve"
+        filename: "pve-no-subscription"
+        channel: "pve-no-subscription"
+  tasks:
+    - name: Disable enterprise pve sources
+      block:
+        - name: Check if enterprise pve sources exist
+          ansible.builtin.stat:
+            path: "{{ sources.enterprise }}"
+          register: enterprise_sources
+        - name: Comment out enterprise pve sources
+          ansible.builtin.lineinfile:
+            path: "{{ sources.enterprise }}"
+            regexp: '^(deb.*)$'
+            line: '#\1'
+            backrefs: true
+          when: enterprise_sources.stat.exists
+
+    - name: Disable ceph sources
+      block:
+        - name: Check if ceph sources exist
+          ansible.builtin.stat:
+            path: "{{ sources.ceph }}"
+          register: ceph_sources
+        - name: Comment out enterprise pve sources
+          ansible.builtin.lineinfile:
+            path: "{{ sources.ceph }}"
+            regexp: '^(deb.*)$'
+            line: '#\1'
+            backrefs: true
+          when: ceph_sources.stat.exists
+
+    - name: Add pve no subscription sources
+      ansible.builtin.apt_repository:
+        filename: "{{ sources.no_sub.filename }}"
+        repo: "deb {{ sources.no_sub.repo }} {{ ansible_distribution_release }} {{ sources.no_sub.channel }}"
+        state: present
+        update_cache: true

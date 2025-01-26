@@ -1,0 +1,20 @@
+---
+vm:
+  node: "pve"
+  vmid: 100
+  name: "truenas"
+  tags: ["truenas", "ansible", "storage"]
+  ostype: "l26"
+  onboot: true
+  agent: true
+  bios: "seabios"
+  cpu: "host"
+  sockets: 1
+  cores: 2
+  memory: 8192
+  balloon: 0
+  scsihw: "virtio-scsi-pci"
+  storage: "local-lvm"
+  disk_size: 32
+  iso_storage: "local"
+  host_bridge: "vmbr0"

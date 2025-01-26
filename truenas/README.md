@@ -1,0 +1,5 @@
+# TrueNAS Scale Installation
+
+```shell
+
+```

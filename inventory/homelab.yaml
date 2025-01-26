@@ -1,0 +1,9 @@
+---
+
+proxmox:
+  hosts:
+    pve_nas: {}
+
+pi_hole:
+  hosts:
+    pi_hole_1: {}

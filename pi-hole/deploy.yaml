@@ -1,0 +1,23 @@
+---
+- name: Deploy Pi-hole on PVE as LXC
+  hosts: pi_hole_1
+  vars_files:
+    - config/container.yaml
+  tasks:
+    - name: Create pi-hole etc folder
+      ansible.builtin.file:
+        path: "/etc/pihole"
+        state: directory
+
+    - name: Prepopulate pi-hole configuration
+      ansible.builtin.template:
+        src: "./config/setupVars.conf.j2"
+        dest: "/etc/pihole/setupVars.conf"
+
+    - name: Install Pi-hole
+      ansible.builtin.shell:
+        cmd: wget -qO- https://install.pi-hole.net | bash /dev/stdin --unattended
+        creates: /usr/local/bin/pihole
+
+    - name: Set web password
+      ansible.builtin.command: "pihole -a -p {{ lxc.pihole.webpassword }}"
