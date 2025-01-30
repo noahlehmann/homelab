@@ -4,6 +4,14 @@ proxmox:
   hosts:
     pve_nas: {}
 
-pi_hole:
+dns:
   hosts:
     pi_hole_1: {}
+
+media:
+  hosts:
+    jellyfin: {}
+
+docker:
+  hosts:
+    docker_1: {}

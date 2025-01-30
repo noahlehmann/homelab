@@ -1,0 +1,57 @@
+---
+- name: Deploy Debian LXC for Semaphore
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Download Debian root fs template
+      ansible.builtin.get_url:
+        url: "{{ semaphore.template.url }}"
+        dest: "{{ semaphore.template.dest }}"
+        mode: "0644"
+
+    - name: Create LXC Container
+      community.general.proxmox:
+        node: "pve_1"
+        api_user: "{{ login.pve.user }}"
+        api_password: "{{ login.pve.password }}"
+        api_host: "{{ ips.pve }}"
+        vmid: "{{ semaphore.vmid }}"
+        state: present
+        hostname: "{{ semaphore.hostname }}"
+        password: "{{ semaphore.password }}"
+        pubkey: "{{ ssh_pub }}"
+        disk: "{{ semaphore.storage }}:{{ semaphore.disk_size }}"
+        ostype: "{{ semaphore.ostype }}"
+        ostemplate: "{{ semaphore.ostemplate }}"
+        onboot: "{{ semaphore.onboot }}"
+        cores: "{{ semaphore.cores }}"
+        memory: "{{ semaphore.memory }}"
+        swap: "{{ semaphore.swap }}"
+        tags: "{{ semaphore.tags }}"
+        unprivileged: "{{ semaphore.unprivileged }}"
+        features: "{{ semaphore.features }}"
+        timezone: "{{ semaphore.timezone }}"
+        nameserver: "{{ net.nameservers[0] }}"
+        searchdomain: "{{ net.searchdomain }}"
+        netif: '{"net0": "name=eth0,bridge=vmbr0,firewall=1,type=veth,gw={{ semaphore.gateway }},ip={{ semaphore.ip }}"}'
+        
+    - name: "{{ semaphore.hostname }}: Start container"
+      community.general.proxmox:
+        node: "{{ semaphore.node }}"
+        api_user: "{{ pve.auth.user }}@{{ pve.auth.realm }}"
+        api_password: "{{ pve.auth.password }}"
+        api_host: "{{ pve.auth.api_host }}"
+        vmid: "{{ semaphore.vmid }}"
+        state: started
+        
+    - name: "{{ semaphore.hostname }}: Create initial Snapshot with bare root-fs"
+      community.general.proxmox_snap:
+        api_user: "{{ pve.auth.user }}@{{ pve.auth.realm }}"
+        api_password: "{{ pve.auth.password }}"
+        api_host: "{{ pve.auth.api_host }}"
+        vmid: "{{ semaphore.vmid }}"
+        snapname: "{{ lxc.common.snapshot.name }}"
+        description: "{{ lxc.common.snapshot.description }}"
+        state: present
+        vmstate: false

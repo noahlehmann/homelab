@@ -10,7 +10,7 @@ vm:
   bios: "seabios"
   cpu: "host"
   sockets: 1
-  cores: 2
+  cores: 3
   memory: 8192
   balloon: 0
   scsihw: "virtio-scsi-pci"

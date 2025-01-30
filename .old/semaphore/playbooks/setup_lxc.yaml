@@ -1,0 +1,77 @@
+---
+- name: Setup LXC
+  hosts: semaphore
+  tasks:
+    - name: Download Semaphore precompiled linux binaries
+      ansible.builtin.get_url:
+        url: "https://github.com/semaphoreui/semaphore/releases/download/v2.10.43/semaphore_2.10.43_linux_amd64.tar.gz"
+        dest: "/tmp/semaphore.tar.gz"
+
+    - name: Download and unpack CoreDNS
+      delegate_to: "semaphore"
+      ansible.builtin.unarchive:
+        remote_src: true
+        src: "/tmp/semaphore.tar.gz"
+        dest: "/usr/local/bin"
+        creates: "/usr/local/bin/semaphore"
+        owner: "root"
+        group: "root"
+        mode: "0755"
+
+    - name: Create Semaphore group
+      ansible.builtin.group:
+        name: "semaphore"
+        state: present
+        system: true
+
+    - name: Create Semaphore User
+      ansible.builtin.user:
+        name: "semaphore"
+        group: "semaphore"
+        state: present
+        comment: "Semaphore User with no login"
+        system: true
+        shell: "/usr/sbin/nologin"
+        home: "/etc/semaphore"
+        create_home: true
+
+    - name: Create Semaphore Systemd Service
+      ansible.builtin.copy:
+        dest: "/etc/systemd/system/semaphore.service"
+        owner: "root"
+        group: "root"
+        mode: "0644"
+        content: |
+          Description=Semaphore Ansible
+          Documentation=https://github.com/semaphoreui/semaphore
+          Wants=network-online.target
+          After=network-online.target
+          [Service]
+          User=semaphore
+          Group=semaphore
+          Type=simple
+          ExecReload=/bin/kill -HUP $MAINPID
+          ExecStart=/usr/local/bin/semaphore server --config=/etc/semaphore/config.json
+          SyslogIdentifier=semaphore
+          Restart=always
+          RestartSec=10s
+          [Install]
+          WantedBy=multi-user.target
+      register: copy_service
+
+    - name: Reload systemd if configuration changed
+      ansible.builtin.systemd:
+        daemon_reload: true
+      when: copy_service.changed
+
+    - name: Start and register Semaphore service
+      ansible.builtin.service:
+        name: "semaphore"
+        enabled: true
+        state: started
+
+    - name: Restart Semaphore if configuration changed
+      ansible.builtin.service:
+        name: "semaphore"
+        state: "restarted"
+      when: copy_service.changed # todo config copy

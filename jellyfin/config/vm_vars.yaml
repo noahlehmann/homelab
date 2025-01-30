@@ -1,0 +1,46 @@
+---
+jellyfin:
+  image:
+    url: "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
+    filename: "ubuntu-24.04-server-cloudimg-amd64.img"
+    cloudinit:
+      folder: "/var/lib/vz/snippets"
+  node: "pve"
+  vmid: 300
+  name: "jellyfin"
+  tags: [ "jellyfin", "ansible", "ubuntu"]
+  ostype: "l26"
+  onboot: true
+  agent: true
+  bios: "seabios"
+  cpu: "host"
+  sockets: 1
+  cores: 2
+  memory: 4096
+  balloon: 0
+  scsihw: "virtio-scsi-pci"
+  disk_name: "scsi0"
+  storage: "local-lvm"
+  disk_size: "128G"
+  boot: "order=scsi0"
+  snapshot:
+    name: "initial-bare-machine"
+    description: "Initial snapshot with bare machine (Ansible)"
+  net:
+    host_bridge: "vmbr0"
+    macaddr: "bc:24:11:51:6f:20"
+    ip: "10.0.0.40/24"
+    gateway: "10.0.0.1"
+    nameserver: "10.0.0.31"
+    searchdomain: "golocal.dev"
+  fqdn_suffix: "golocal.dev"
+  user: "jellyfin"
+  password: "12345678"
+#  password: !vault |
+#    $ANSIBLE_VAULT;1.1;AES256
+#    65656532303834656237373637636530303037303033333836343431323438386466656234386663
+#    6666386165323662353132323734646563303933616363390a643431613263356431353732366635
+#    31623463643739353738633061323362333835383565613862336635383631656231323632356333
+#    6462366431363239310a323561366231626164313865316637316539326662646239363165316338
+#    63663561646235303336303365343432613035633739383332306464316235376533
+

@@ -1,0 +1,26 @@
+---
+semaphore:
+  template:
+    url: "http://download.proxmox.com/images/system/debian-12-standard_12.2-1_amd64.tar.zst"
+    dest: "/var/lib/vz/template/cache/debian-12-standard_12.2-1_amd64.tar.zst"
+  node: "pve-2"
+  vmid: "501"
+  hostname: "semaphore"
+  password: "12345678"
+  storage: "local-lvm"
+  disk_size: "10"
+  ostype: "debian"
+  ostemplate: "local:vztmpl/debian-12-standard_12.2-1_amd64.tar.zst"
+  onboot: true
+  cores: 2
+  memory: 4096
+  swap: 0
+  tags: ["semaphore", "debian", "ansible"]
+  unprivileged: true
+  features: ["nesting=0"]
+  timezone: "Europe/Berlin"
+  gateway: "10.90.43.254"
+  ip: "10.90.43.50/24"
+  snapshot:
+    name: "initial-bare-root-fs"
+    description: "Initial snapshot with bare root-fs (Ansible)"

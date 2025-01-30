@@ -1,0 +1,23 @@
+#cloud-config
+users:
+  - name: "{{ jellyfin.user }}"
+    sudo: "ALL=(ALL) NOPASSWD:ALL"
+    groups: "sudo"
+    plain_text_passwd: "12345678"
+    ssh_authorized_keys:
+      - {{ ssh_pub }}
+locale: "en_US.UTF-8"
+keyboard:
+  layout: de
+  variant: nodeadkeys
+package_update: true
+package_upgrade: true
+package_reboot_if_required: true
+hostname: "{{ jellyfin.name }}"
+create_hostname_file: true
+fqdn: "{{ jellyfin.name }}.{{ jellyfin.fqdn_suffix }}"
+prefer_fqdn_over_hostname: false
+resize_rootfs: true
+growpart:
+  mode: auto
+  devices: ['/']

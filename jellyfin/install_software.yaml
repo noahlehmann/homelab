@@ -1,0 +1,22 @@
+---
+- name: Install software on jellyfin VM
+  hosts: jellyfin
+  tasks:
+    - name: Update package cache
+      become: true
+      ansible.builtin.apt:
+        update_cache: yes
+        upgrade: dist
+
+    - name: Install and enable QEMU
+      become: true
+      block:
+        - name: Install QEMU
+          ansible.builtin.apt:
+            name: qemu
+            state: present
+        - name: Enable QEMU
+          ansible.builtin.systemd:
+            name: qemu
+            enabled: yes
+            state: started
