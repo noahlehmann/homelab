@@ -3,18 +3,16 @@ network:
   version: 2
   ethernets:
     eth0:
-    dhcp4: false
-    dhcp6: false
-    match:
-      macaddress: {{ jellyfin.net.macaddr }}
-    set-name: eth0
-    addresses:
-      - {{ jellyfin.net.ip }}
-    nameservers:
+      match:
+        macaddress: {{ jellyfin.net.macaddr }}
+      set-name: eth0
       addresses:
-        - {{ jellyfin.net.nameserver }}
-      search:
-        - {{ jellyfin.net.searchdomain }}
-    routes:
-      - to: "0.0.0.0/0"
-        via: {{ jellyfin.net.gateway }}
+        - {{ jellyfin.net.ip }}
+      nameservers:
+        addresses:
+          - {{ jellyfin.net.nameserver }}
+        search:
+          - {{ jellyfin.net.searchdomain }}
+      routes:
+        - to: "0.0.0.0/0"
+          via: {{ jellyfin.net.gateway }}

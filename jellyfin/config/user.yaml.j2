@@ -1,11 +1,11 @@
 #cloud-config
 users:
+  - default
   - name: "{{ jellyfin.user }}"
     sudo: "ALL=(ALL) NOPASSWD:ALL"
-    groups: "sudo"
-    plain_text_passwd: "12345678"
     ssh_authorized_keys:
       - {{ ssh_pub }}
+chpasswd: { expire: False }
 locale: "en_US.UTF-8"
 keyboard:
   layout: de
