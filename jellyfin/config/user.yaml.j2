@@ -5,6 +5,7 @@ users:
     sudo: "ALL=(ALL) NOPASSWD:ALL"
     ssh_authorized_keys:
       - {{ ssh_pub }}
+    shell: /bin/bash
 chpasswd: { expire: False }
 locale: "en_US.UTF-8"
 keyboard:

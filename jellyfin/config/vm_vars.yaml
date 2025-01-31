@@ -34,8 +34,7 @@ jellyfin:
     nameserver: "10.0.0.31"
     searchdomain: "golocal.dev"
   fqdn_suffix: "golocal.dev"
-  user: "jellyfin"
-  password: "12345678"
+  user: "nlehmann"
 #  password: !vault |
 #    $ANSIBLE_VAULT;1.1;AES256
 #    65656532303834656237373637636530303037303033333836343431323438386466656234386663

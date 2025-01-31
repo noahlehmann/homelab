@@ -1,8 +1,13 @@
 ---
 - name: Install software on jellyfin VM
   hosts: jellyfin
+  vars:
+    keyring_url: https://repo.jellyfin.org/jellyfin_team.gpg.key
+    repo_url: https://repo.jellyfin.org/ubuntu
+    keyring: "/etc/apt/keyrings/jellyfin.gpg"
+    tmp: "/tmp/jellyfin.asc"
   tasks:
-    - name: Update package cache
+    - name: Update package cache and install dependencies
       become: true
       ansible.builtin.apt:
         update_cache: yes
@@ -13,10 +18,52 @@
       block:
         - name: Install QEMU
           ansible.builtin.apt:
-            name: qemu
+            name: qemu-guest-agent
             state: present
         - name: Enable QEMU
           ansible.builtin.systemd:
-            name: qemu
+            name: qemu-guest-agent
             enabled: yes
             state: started
+
+    - name: Ensure keyrings directory exists
+      become: true
+      ansible.builtin.file:
+        path: "/etc/apt/keyrings"
+        state: directory
+
+    - name: Install jellyfin keyring
+      become: true
+      ansible.builtin.get_url:
+        url: "{{ keyring_url }}"
+        force: true
+        dest: "{{ tmp }}"
+
+    - name: Dearmor jellyfin keyring
+      become: true
+      ansible.builtin.command:
+        cmd: "gpg --dearmor -o {{ keyring }} {{ tmp }}"
+        creates: "{{ keyring }}"
+
+    - name: Add jellyfin sources
+      become: true
+      ansible.builtin.apt_repository:
+        filename: "jellyfin"
+        repo: "deb [signed-by={{ keyring }}] {{ repo_url }} {{ ansible_distribution_release }} main"
+        state: present
+
+    - name: Install jellyfin
+      become: true
+      ansible.builtin.apt:
+        name:
+          - jellyfin-server
+          - jellyfin-web
+        state: present
+        update_cache: yes
+
+    - name: Enable jellyfin service
+      become: true
+      ansible.builtin.systemd_service:
+        name: jellyfin
+        enabled: yes
+        state: started
