@@ -1,0 +1,37 @@
+---
+docker:
+  image:
+    url: "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
+    filename: "ubuntu-24.04-server-cloudimg-amd64.img"
+    cloudinit:
+      folder: "/var/lib/vz/snippets"
+  node: "pve"
+  vmid: 400
+  name: "docker-1"
+  tags: [ "docker", "ansible", "ubuntu24"]
+  ostype: "l26"
+  onboot: true
+  agent: true
+  bios: "seabios"
+  cpu: "host"
+  sockets: 1
+  cores: 2
+  memory: 2048
+  balloon: 0
+  scsihw: "virtio-scsi-pci"
+  disk_name: "scsi0"
+  storage: "local-lvm"
+  disk_size: "128G"
+  boot: "order=scsi0"
+  snapshot:
+    name: "initial-bare-machine"
+    description: "Initial snapshot with bare machine (Ansible)"
+  net:
+    host_bridge: "vmbr0"
+    macaddr: "bc:24:11:51:6f:20"
+    ip: "10.0.0.20/24"
+    gateway: "10.0.0.1"
+    nameserver: "10.0.0.31"
+    searchdomain: "golocal.dev"
+  fqdn_suffix: "golocal.dev"
+  user: "nlehmann"

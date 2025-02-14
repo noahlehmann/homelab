@@ -1,0 +1,24 @@
+#cloud-config
+users:
+  - default
+  - name: "{{ docker.user }}"
+    sudo: "ALL=(ALL) NOPASSWD:ALL"
+    ssh_authorized_keys:
+      - {{ ssh_pub }}
+    shell: /bin/bash
+chpasswd: { expire: False }
+locale: "en_US.UTF-8"
+keyboard:
+  layout: de
+  variant: nodeadkeys
+package_update: true
+package_upgrade: true
+package_reboot_if_required: true
+hostname: "{{ docker.name }}"
+create_hostname_file: true
+fqdn: "{{ docker.name }}.{{ docker.fqdn_suffix }}"
+prefer_fqdn_over_hostname: false
+resize_rootfs: true
+growpart:
+  mode: auto
+  devices: ['/']

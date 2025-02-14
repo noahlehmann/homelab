@@ -67,3 +67,9 @@
         name: jellyfin
         enabled: yes
         state: started
+
+    - name: Install nfs utils
+      become: true
+      ansible.builtin.apt:
+        name: nfs-common
+        state: present

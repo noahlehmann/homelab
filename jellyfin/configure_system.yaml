@@ -1,0 +1,27 @@
+---
+- name: Install software on jellyfin VM
+  hosts: jellyfin
+  vars:
+    fstab:
+      share: "//10.0.0.21/jellyfin"
+      mount: "/media/truenas"
+      smb_user: "jellyfin"
+      smb_password: !vault |
+        $ANSIBLE_VAULT;1.1;AES256
+        35306232333234303562663566613264363736373539303532313733616365363930646263353239
+        3135323334663266646330623039396262366633383932620a383061626161643936616162626666
+        32326237393539343664376237623934333861663036363366303833623434616134303239386634
+        3234356435303238360a666430316436336336393332363935353430386165663066323437623362
+        62613531393539346363663566333961303865636131373134613938613962323931
+  tasks:
+
+    - name: Add nfs mount to fstab
+      become: true
+      ansible.posix.mount:
+        backup: true
+        boot: true
+        fstype: cifs
+        opts: "rw,vers=3,file_mode=0644,dir_mode=0755,username={{ fstab.smb_user }},password={{ fstab.smb_password }}"
+        src: "{{ fstab.share }}"
+        path: "{{ fstab.mount }}"
+        state: mounted

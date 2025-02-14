@@ -1,1 +1,130 @@
 ---
+- name: Create docker VM
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - config/vm_vars.yaml
+    - ../ansible.global_vars.yaml
+  vars:
+    target_ansible_pve_host: "pve_nas"
+  tasks:
+    - name: Download the image
+      ansible.builtin.uri:
+        url: "{{ docker.image.url }}"
+        dest: "/var/lib/vz/template/iso/{{ docker.image.filename }}"
+        status_code: [200, 304]
+      delegate_to: "{{ target_ansible_pve_host }}"
+
+    - name: Copy ci custom files
+      block:
+        - name: Ensure snippets folder exists
+          ansible.builtin.file:
+            path: "{{ docker.image.cloudinit.folder }}"
+            state: directory
+            mode: "0755"
+        - name: Copy user-data
+          ansible.builtin.template:
+            src: config/user.yaml.j2
+            dest: "{{ docker.image.cloudinit.folder }}/user_{{ docker.vmid }}"
+            mode: "0644"
+        - name: Copy network-data
+          ansible.builtin.template:
+            src: config/network.yaml.j2
+            dest: "{{ docker.image.cloudinit.folder }}/net_{{ docker.vmid }}"
+            mode: "0644"
+      delegate_to: "{{ target_ansible_pve_host }}"
+
+    - name: Create docker VM
+      community.general.proxmox_kvm:
+        api_host: "{{ pve_api.host }}"
+        api_user: "{{ pve_api.user }}@{{ pve_api.realm }}"
+        api_password: "{{ pve_api.password }}"
+        node: "{{ docker.node }}"
+        vmid: "{{ docker.vmid }}"
+        state: present
+        name: "{{ docker.name }}"
+        ostype: "{{ docker.ostype }}"
+        onboot: "{{ docker.onboot }}"
+        agent: "{{ docker.agent }}"
+        bios: "{{ docker.bios }}"
+        cpu: "{{ docker.cpu }}"
+        sockets: "{{ docker.sockets }}"
+        cores: "{{ docker.cores }}"
+        memory: "{{ docker.memory }}"
+        balloon: "{{ docker.balloon }}"
+        scsihw: "{{ docker.scsihw }}"
+        ide:
+          ide2: "{{ docker.storage }}:cloudinit"
+        net:
+          net0: "model=virtio,bridge={{ docker.net.host_bridge }},firewall=1,macaddr={{ docker.net.macaddr }}"
+        tags: "{{ docker.tags }}"
+        cicustom: "user=local:snippets/user_{{ docker.vmid }},network=local:snippets/net_{{ docker.vmid }}"
+
+    - name: Import cloud image
+      community.general.proxmox_disk:
+        api_host: "{{ pve_api.host }}"
+        api_user: "{{ pve_api.user }}@{{ pve_api.realm }}"
+        api_password: "{{ pve_api.password }}"
+        vmid: "{{ docker.vmid }}"
+        import_from: "/var/lib/vz/template/iso/{{ docker.image.filename }}"
+        storage: "{{ docker.storage }}"
+        disk: "{{ docker.disk_name }}"
+        state: present
+
+    - name: Check VM config for optional updates
+      community.general.proxmox_vm_info:
+        api_host: "{{ pve_api.host }}"
+        api_user: "{{ pve_api.user }}@{{ pve_api.realm }}"
+        api_password: "{{ pve_api.password }}"
+        node: "{{ docker.node }}"
+        vmid: "{{ docker.vmid }}"
+        config: current
+      register: "vm_info"
+
+    - name: Register disk sizes and boot order for optional updates
+      ansible.builtin.set_fact:
+        disk_sizes: "{{ vm_info.proxmox_vms[0].config.scsi0 | regex_search('size=(.*)', '\\1') }}"
+        boot: "{{ vm_info.proxmox_vms[0].config.boot }}"
+
+    - name: Resize the boot disk
+      community.general.proxmox_disk:
+        api_host: "{{ pve_api.host }}"
+        api_user: "{{ pve_api.user }}@{{ pve_api.realm }}"
+        api_password: "{{ pve_api.password }}"
+        vmid: "{{ docker.vmid }}"
+        disk: "{{ docker.disk_name }}"
+        state: resized
+        size: "{{ docker.disk_size }}"
+      when: "disk_sizes[0] != docker.disk_size"
+
+    - name: Set boot order to disk
+      community.general.proxmox_kvm:
+        api_host: "{{ pve_api.host }}"
+        api_user: "{{ pve_api.user }}@{{ pve_api.realm }}"
+        api_password: "{{ pve_api.password }}"
+        node: "{{ docker.node }}"
+        vmid: "{{ docker.vmid }}"
+        update: true
+        boot: "{{ docker.boot }}"
+        bootdisk: "{{ docker.disk_name }}"
+      when: "boot != docker.boot"
+
+    - name: Start the VM
+      community.general.proxmox_kvm:
+        api_host: "{{ pve_api.host }}"
+        api_user: "{{ pve_api.user }}@{{ pve_api.realm }}"
+        api_password: "{{ pve_api.password }}"
+        node: "{{ docker.node }}"
+        vmid: "{{ docker.vmid }}"
+        state: started
+
+    - name: Create initial Snapshot with bare machine
+      community.general.proxmox_snap:
+        api_host: "{{ pve_api.host }}"
+        api_user: "{{ pve_api.user }}@{{ pve_api.realm }}"
+        api_password: "{{ pve_api.password }}"
+        vmid: "{{ docker.vmid }}"
+        snapname: "{{ docker.snapshot.name }}"
+        description: "{{ docker.snapshot.description }}"
+        state: present
+        vmstate: false

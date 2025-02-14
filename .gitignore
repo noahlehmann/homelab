@@ -3,3 +3,6 @@
 
 **/.env/*
 !**/.gitkeep
+
+# Roles via Ansible Galaxy
+roles/*.*/

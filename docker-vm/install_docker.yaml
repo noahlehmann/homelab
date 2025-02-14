@@ -1,0 +1,10 @@
+---
+- name: Install Docker and dependencies
+  hosts: docker
+  vars:
+    docker_users:
+      - "{{ ansible_user }}"
+  roles:
+    - name: qemu-guest-agent
+    - name: geerlingguy.docker
+      become: true

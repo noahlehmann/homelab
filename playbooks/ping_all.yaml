@@ -1,0 +1,14 @@
+---
+- name: Check inventory size
+  hosts: localhost
+  tasks:
+    - name: Check if inventory is empty
+      ansible.builtin.fail:
+        msg: "[ERROR] Empty inventory. No host available."
+      when: "groups.all | length == 0"
+
+- name: Ping all hosts
+  hosts: all
+  tasks:
+    - name: Ping all hosts as test stage
+      ansible.builtin.ping:
