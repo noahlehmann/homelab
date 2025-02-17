@@ -28,7 +28,7 @@ jellyfin:
     description: "Initial snapshot with bare machine (Ansible)"
   net:
     host_bridge: "vmbr0"
-    macaddr: "bc:24:11:51:6f:20"
+    macaddr: "bc:24:11:51:6f:40"
     ip: "10.0.0.40/24"
     gateway: "10.0.0.1"
     nameserver: "10.0.0.31"

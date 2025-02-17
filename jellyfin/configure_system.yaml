@@ -15,7 +15,7 @@
         62613531393539346363663566333961303865636131373134613938613962323931
   tasks:
 
-    - name: Add nfs mount to fstab
+    - name: Add smb mount to fstab
       become: true
       ansible.posix.mount:
         backup: true
